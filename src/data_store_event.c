@@ -27,6 +27,7 @@ int8_t data_strore_event_init(void)
     g_event_record.rc.cr.content_block_end = (CONTENT_START_ADDR_EVENT + CONTENT_LEN_EVENT)/FLASH_BLOCK_SIZE;
     g_event_record.rc.cr.dir_bit_block_start = DIRECTORY_START_ADDR_FLAGS_EV/FLASH_BLOCK_SIZE;
     g_event_record.rc.cr.dir_flag_block_start = DIRECTORY_START_ADDR_FLAGS_EV/FLASH_BLOCK_SIZE;
+    g_event_record.rc.cr.dir_bit_block_len = DIRECTORY_LEN_BIT_EVENT/FLASH_BLOCK_SIZE;
     
     return 0;
 }

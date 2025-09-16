@@ -132,7 +132,7 @@ void data_strore_init(void)
 
 
 
-void data_strore_task(void)
+void data_store_task(void)
 {
 
     data_strore_history_task();
