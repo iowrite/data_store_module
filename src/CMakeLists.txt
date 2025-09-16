@@ -1,30 +1,19 @@
 
-cmake_minimum_required(VERSION 3.10)
-project(data_store_module)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Use clang as the C compiler
-set(CMAKE_C_COMPILER "clang")
-
-set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_EXTENSIONS OFF) # Use 'c99', not 'gnu99'
-set(CMAKE_C_STANDARD_REQUIRED ON)
-
-include_directories(.)
-
-
-# 自动收集所有.c和.h文件（排除old目录）
-file(GLOB_RECURSE SOURCES
-	"*.c"
-	"*.h"
+# Collect all .c files in src (excluding old/)
+file(GLOB_RECURSE DATA_STORE_SOURCES
+	"${CMAKE_CURRENT_SOURCE_DIR}/*.c"
 )
-list(FILTER SOURCES EXCLUDE REGEX "old/")
+file(GLOB_RECURSE DATA_STORE_HEADERS
+	"${CMAKE_CURRENT_SOURCE_DIR}/*.h"
+)
+list(FILTER DATA_STORE_SOURCES EXCLUDE REGEX "/old/")
+list(FILTER DATA_STORE_HEADERS EXCLUDE REGEX "/old/")
 
-# 创建静态库
-add_library(data_store STATIC ${SOURCES})
+add_library(data_store_lib STATIC ${DATA_STORE_SOURCES} ${DATA_STORE_HEADERS})
+target_include_directories(data_store_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-# 编译选项
-target_compile_options(data_store PRIVATE
+target_compile_options(data_store_lib PRIVATE
 	-std=c99
 	-Wall
 	-Wextra

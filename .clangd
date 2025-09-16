@@ -1,2 +1,2 @@
 CompileFlags:
-  CompilationDatabase: src/out/build/test
+  CompilationDatabase: out/build/data_store_linux_simulation/
