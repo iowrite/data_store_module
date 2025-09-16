@@ -1,0 +1,155 @@
+#include <string.h>
+#include <stdint.h>
+#include "data_store_config.h"
+#include "data_store_queue.h"
+#include "data_store_history.h"
+#include "data_store_event.h"
+#include "data_store_wave.h"
+#include "data_store_private.h"
+#include "data_store_port.h"
+#include "data_store.h"
+
+
+
+int8_t data_store_refresh_directory(struct Record_Context *rc)
+{
+    if(rc->dir_erase)
+    {
+        rc->dir_erase = false;
+        data_store_port_erase_flash(rc->cr.dir_flag_block_start/FLASH_BLOCK_SIZE, 1);        // directory flag region alway one block
+        data_store_port_write_flash(rc->cr.dir_flag_block_start/FLASH_BLOCK_SIZE, 0, 0, (uint8_t *)rc, sizeof(struct Record_Context));
+        data_store_port_erase_flash(rc->cr.dir_bit_block_start/FLASH_BLOCK_SIZE, rc->cr.dir_bit_block_len);
+    }
+
+    uint32_t pages = rc->wp.block_index*PAGES_PER_BLOCK + rc->wp.page_index;
+    uint32_t msg_per_page = FLASH_PAGE_SIZE/rc->msg_size;
+    uint32_t entries = pages*msg_per_page;
+    uint32_t dir_bytes = entries/8 + ((entries%8) ? 1 : 0);
+
+    uint32_t dir_pages = dir_bytes/FLASH_PAGE_SIZE + ((dir_bytes%FLASH_PAGE_SIZE) ? 1 : 0);
+    uint32_t dir_blocks = dir_pages/PAGES_PER_BLOCK + ((dir_pages%PAGES_PER_BLOCK) ? 1 : 0);
+
+    uint32_t dir_block_index = rc->cr.dir_bit_block_start + dir_blocks-1;
+    uint32_t dir_page_index = rc->cr.dir_bit_block_start + dir_pages-1;
+    
+
+    uint8_t rbf[FLASH_PAGE_SIZE];
+    memset(rbf, 0, sizeof(rbf));
+    data_store_port_read_flash(dir_block_index, dir_page_index, 0, rbf, FLASH_PAGE_SIZE);
+    for (uint32_t i = 0; i < dir_bytes-1; i++)
+    {
+        if(rbf[i] != 0x00){
+            return -1;  
+        }
+    }
+    if(rbf[dir_bytes-1] & (1 << (entries%8)))           // check the bit must be 1(not been writen yet)
+    {
+        rbf[dir_bytes-1] &= ~(1 << (entries%8));        // clear the bit to 0(written)
+    }else{
+        return -1;                                      // already written(report error)
+    }
+    // write back to flash
+    int8_t ret = data_store_port_write_flash(dir_block_index, dir_page_index, 0, rbf, FLASH_PAGE_SIZE);
+
+
+    return ret;
+}
+
+
+
+int8_t data_store_write_message(struct Record_Context *rc, struct Data_Store_Message *msg)
+{
+    // rewrite message(fill the record id feild)        len = MESSAGE_HEADER_SIZE
+    memcpy(msg->buf, &rc->record_id, sizeof(rc->record_id));
+    int8_t ret = data_store_port_write_flash(rc->wp.block_index, rc->wp.page_index, 0, msg->buf, msg->size);
+    if(ret != 0) {
+        return ret;    // write error
+    }
+
+    // update write position
+    rc->wp.offset += rc->msg_size;
+    if(rc->wp.offset >= FLASH_PAGE_SIZE) {
+        rc->wp.page_index += 1;
+        rc->wp.offset = 0;
+        if(rc->wp.page_index >= PAGES_PER_BLOCK) {
+            rc->wp.block_index += 1;
+            rc->wp.page_index = 0;
+            if(rc->wp.block_index >= rc->cr.content_block_end) {
+                rc->wp.block_index = rc->cr.content_block_start;
+                // update read position if needed 
+                if(    rc->wp.block_index != rc->cr.content_block_start 
+                    && rc->rp.block_index != rc->cr.content_block_start
+                    && rc->wp.block_index == rc->rp.block_index
+                    && rc->cycle > 0)                                   
+                {
+                    rc->rp.block_index += 1;
+                    if(rc->rp.block_index >= rc->cr.content_block_end)
+                    {
+                        rc->rp.block_index = rc->cr.content_block_start;
+                    }
+                    rc->rp.page_index = 0;
+                    rc->rp.offset = 0;
+                }
+                
+                rc->cycle += 1;
+                rc->dir_erase = true;
+            }
+            // erase next block
+            data_store_port_erase_flash(rc->wp.block_index, 1);
+        }
+    }
+
+
+
+    rc->record_id += 1;
+
+    return 0;
+}
+
+
+
+
+
+
+void data_strore_init(void)
+{
+
+    data_strore_history_init();
+
+    data_strore_event_init();
+
+    data_strore_wave_init();
+
+
+
+}
+
+
+
+
+
+
+
+
+
+void data_strore_task(void)
+{
+
+    data_strore_history_task();
+
+    data_strore_event_task();
+
+    data_strore_wave_task();
+
+}
+
+
+
+
+
+
+
+
+
+
+

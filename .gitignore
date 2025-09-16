@@ -1,0 +1,5 @@
+# CMake build directories
+out/
+
+# Ignore old/ if needed
+old/
