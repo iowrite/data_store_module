@@ -3,7 +3,7 @@
 #include "data_store_private.h"
 
 
-int8_t data_store_port_read_flash(uint32_t block_index, uint32_t page_index, uint32_t offset, uint8_t* buf, uint32_t len)
+__attribute__((weak)) int8_t data_store_port_read_flash(uint32_t block_index, uint32_t page_index, uint32_t offset, uint8_t* buf, uint32_t len)
 {
     UNUSED(block_index);
     UNUSED(page_index);
@@ -18,7 +18,7 @@ int8_t data_store_port_read_flash(uint32_t block_index, uint32_t page_index, uin
 }
 
 
-int8_t data_store_port_write_flash(uint32_t block_index, uint32_t page_index, uint32_t offset, uint8_t* buf, uint32_t len)
+__attribute__((weak)) int8_t data_store_port_write_flash(uint32_t block_index, uint32_t page_index, uint32_t offset, uint8_t* buf, uint32_t len)
 {
     
     UNUSED(block_index);
@@ -31,7 +31,7 @@ int8_t data_store_port_write_flash(uint32_t block_index, uint32_t page_index, ui
     return 0;
 }
 
-int8_t data_store_port_erase_flash(uint32_t block_index, uint32_t len)
+__attribute__((weak)) int8_t data_store_port_erase_flash(uint32_t block_index, uint32_t len)
 {
     
     UNUSED(block_index);
@@ -43,7 +43,7 @@ int8_t data_store_port_erase_flash(uint32_t block_index, uint32_t len)
 
 
 
-uint32_t data_store_port_get_tick(void)
+__attribute__((weak)) uint32_t data_store_port_get_tick(void)
 {
 
 
