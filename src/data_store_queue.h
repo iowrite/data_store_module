@@ -54,16 +54,10 @@ extern struct Queue_Wave g_queue_wave;
 
 
 
-#define QUEUE_SIZE_MASK(q) ((q)->size - 1)
-static inline bool data_store_queue_is_full(struct Data_Store_Queue *q)
-{
-    return ((q->tail - q->head) & QUEUE_SIZE_MASK(q)) == QUEUE_SIZE_MASK(q);
-}
 
-static inline uint8_t data_store_queue_is_empty(struct Data_Store_Queue *q) {
-  return (q->head == q->tail);
-}
 
+bool data_store_queue_is_full(struct Data_Store_Queue *q);
+bool data_store_queue_is_empty(struct Data_Store_Queue *q);
 
 void data_store_enqueue(struct Data_Store_Queue *q, struct Data_Store_Message *msg);
 

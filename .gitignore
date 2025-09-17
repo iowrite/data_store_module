@@ -3,3 +3,5 @@ out/
 
 # Ignore old/ if needed
 old/
+
+flash.img

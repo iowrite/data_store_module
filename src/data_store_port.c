@@ -52,3 +52,17 @@ __attribute__((weak)) uint32_t data_store_port_get_tick(void)
     return 0;
 
 }
+
+__attribute__((weak)) void data_store_port_mux_lock(void)
+{
+
+
+
+}
+
+__attribute__((weak)) void data_store_port_mux_unlock(void)
+{
+
+}
+
+

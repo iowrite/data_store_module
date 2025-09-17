@@ -6,9 +6,9 @@
 #include "data_store.h"
 
 
-#define TEST_FILE_NAME "flash.img"
+#define TEST_FILE_NAME "/home/hm/Desktop/data_store_module/test/flash.img"
 FILE *g_flash_file;
-
+pthread_mutex_t g_mux_lock = PTHREAD_MUTEX_INITIALIZER;
 void *data_store_thread_func(void *arg) {
     printf("[thread 1]-->init\n");
     data_store_init();
@@ -27,14 +27,15 @@ void *generate_history_thread_func(void *arg) {
         struct tm *local = localtime(&now); // 转换为本地时间结构
         uint8_t msg[252];
         memset(msg, ' ', sizeof msg);
-        msg[251] = '\n';
+        msg[250] = '\n';
+        msg[251] = '\0';
         sprintf((char *)msg, "time: %04d-%02d-%02d %02d:%02d:%02d, i: %d",
                 local->tm_year + 1900, local->tm_mon + 1, local->tm_mday,
                 local->tm_hour, local->tm_min, local->tm_sec, i);
         data_store_post_a_history(msg, sizeof msg);
         sleep(1);
         i++;
-        printf("[thread 1]-->generate a history\n");
+        printf("[thread 1]-->generate a history: %s\n", msg);
         
     }
     return NULL;
@@ -44,9 +45,8 @@ void *generate_history_thread_func(void *arg) {
 int main(int argc, char **argv)
 {
     printf("hi this is data store test program\n");
-    g_flash_file = fopen(TEST_FILE_NAME, "wb+");
+    g_flash_file = fopen(TEST_FILE_NAME, "rb+");
 
-    
 
     pthread_t data_store_thread;
     if (pthread_create(&data_store_thread, NULL, data_store_thread_func, NULL) != 0) {
