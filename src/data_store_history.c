@@ -33,12 +33,13 @@ int8_t data_store_write_history(struct Message_History* msg)
 {
     // add lock here if needed
 
+    data_store_write_message(&g_history_record.rc, &msg->header);
+    // release lock here if needed
+
     // refresh directory
     data_store_refresh_directory(&g_history_record.rc);
     // write content
     
-    data_store_write_message(&g_history_record.rc, &msg->header);
-    // release lock here if needed
 
 
     return 0;
@@ -59,6 +60,13 @@ int8_t data_store_history_init(void)
     g_history_record.rc.record_id = 0;
     g_history_record.rc.cycle = 0;
 
+    g_history_record.rc.wp.block_index = g_history_record.rc.cr.content_block_start;
+    g_history_record.rc.wp.page_index = 0;
+    g_history_record.rc.wp.offset = 0;
+    g_history_record.rc.rp.block_index = g_history_record.rc.cr.content_block_start;
+    g_history_record.rc.rp.page_index = 0;
+    g_history_record.rc.rp.offset = 0;
+
     return 0;
 }
 
@@ -75,7 +83,7 @@ void data_store_history_task(void)
     {
         // store to flash
         data_store_write_history(&msg);
-        DEBUG_LOG("history write a message to flash");
+        DEBUG_LOG("history write a message to flash\n");
 
     }
     // release lock

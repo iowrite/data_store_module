@@ -21,30 +21,31 @@ int8_t data_store_refresh_directory(struct Record_Context *rc)
         data_store_port_erase_flash(rc->cr.dir_bit_block_start/FLASH_BLOCK_SIZE, rc->cr.dir_bit_block_len);
     }
 
-    uint32_t pages = rc->wp.block_index*PAGES_PER_BLOCK + rc->wp.page_index;
+    uint32_t pages = (rc->wp.block_index - rc->cr.content_block_start)*PAGES_PER_BLOCK + rc->wp.page_index;
     uint32_t msg_per_page = FLASH_PAGE_SIZE/rc->msg_size;
-    uint32_t entries = pages*msg_per_page;
+    uint32_t entries = pages*msg_per_page + rc->wp.offset/rc->msg_size; // entry must greater than 0
     uint32_t dir_bytes = entries/8 + ((entries%8) ? 1 : 0);
 
     uint32_t dir_pages = dir_bytes/FLASH_PAGE_SIZE + ((dir_bytes%FLASH_PAGE_SIZE) ? 1 : 0);
     uint32_t dir_blocks = dir_pages/PAGES_PER_BLOCK + ((dir_pages%PAGES_PER_BLOCK) ? 1 : 0);
 
     uint32_t dir_block_index = rc->cr.dir_bit_block_start + dir_blocks-1;
-    uint32_t dir_page_index = rc->cr.dir_bit_block_start + dir_pages-1;
+    uint32_t dir_page_index = dir_pages-1;
+    uint32_t dir_page_offset = dir_bytes % FLASH_PAGE_SIZE-1;
     
 
     uint8_t rbf[FLASH_PAGE_SIZE];
     memset(rbf, 0, sizeof(rbf));
     data_store_port_read_flash(dir_block_index, dir_page_index, 0, rbf, FLASH_PAGE_SIZE);
-    for (uint32_t i = 0; i < dir_bytes-1; i++)
+    for (uint32_t i = 0; i < dir_page_offset; i++)
     {
         if(rbf[i] != 0x00){
             return -1;  
         }
     }
-    if(rbf[dir_bytes-1] & (1 << (entries%8)))           // check the bit must be 1(not been writen yet)
+    if(rbf[dir_page_offset] & (1 << ((entries-1)%8)))           // check the bit must be 1(not been writen yet)
     {
-        rbf[dir_bytes-1] &= ~(1 << (entries%8));        // clear the bit to 0(written)
+        rbf[dir_page_offset] &= ~(1 << ((entries-1)%8));        // clear the bit to 0(written)
     }else{
         return -1;                                      // already written(report error)
     }
