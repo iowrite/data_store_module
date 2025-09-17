@@ -17,8 +17,8 @@ struct Wave_Record{
 
 
 
-int8_t data_strore_wave_init(void);
-void data_strore_wave_task(void);
+int8_t data_store_wave_init(void);
+void data_store_wave_task(void);
 
 
 

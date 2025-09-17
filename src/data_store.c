@@ -111,14 +111,14 @@ int8_t data_store_write_message(struct Record_Context *rc, struct Data_Store_Mes
 
 
 
-void data_strore_init(void)
+void data_store_init(void)
 {
 
-    data_strore_history_init();
+    data_store_history_init();
 
-    data_strore_event_init();
+    data_store_event_init();
 
-    data_strore_wave_init();
+    data_store_wave_init();
 
 
 
@@ -135,11 +135,11 @@ void data_strore_init(void)
 void data_store_task(void)
 {
 
-    data_strore_history_task();
+    data_store_history_task();
 
-    data_strore_event_task();
+    data_store_event_task();
 
-    data_strore_wave_task();
+    data_store_wave_task();
 
 }
 

@@ -21,7 +21,7 @@ struct Queue_Event g_queue_event = {
     .queue.size = sizeof(g_queue_event.buf)
 };
 
-int8_t data_strore_event_init(void)
+int8_t data_store_event_init(void)
 {
     g_event_record.rc.cr.content_block_start = CONTENT_START_ADDR_EVENT/FLASH_BLOCK_SIZE;
     g_event_record.rc.cr.content_block_end = (CONTENT_START_ADDR_EVENT + CONTENT_LEN_EVENT)/FLASH_BLOCK_SIZE;
@@ -33,7 +33,7 @@ int8_t data_strore_event_init(void)
 }
 
 
-void data_strore_event_task(void)
+void data_store_event_task(void)
 {
 
 

@@ -4,6 +4,7 @@
 #include "data_store_queue.h"
 #include "data_store_private.h"
 #include "data_store_port.h"
+#include "data_store_debug.h"
 
 struct History_Record{
     struct Record_Context rc;
@@ -44,7 +45,7 @@ int8_t data_store_write_history(struct Message_History* msg)
 
 
 
-int8_t data_strore_history_init(void)
+int8_t data_store_history_init(void)
 {
     g_history_record.rc.cr.content_block_start = CONTENT_START_ADDR_HISTORY/FLASH_BLOCK_SIZE;
     g_history_record.rc.cr.content_block_end = (CONTENT_START_ADDR_HISTORY + CONTENT_LEN_HISTORY)/FLASH_BLOCK_SIZE;
@@ -57,7 +58,7 @@ int8_t data_strore_history_init(void)
 
 
 
-void data_strore_history_task(void)
+void data_store_history_task(void)
 {
     
     struct Message_History msg;
@@ -68,6 +69,7 @@ void data_strore_history_task(void)
     {
         // store to flash
         data_store_write_history(&msg);
+        DEBUG_LOG("history write a message to flash");
 
     }
     // release lock

@@ -7,10 +7,10 @@
 
 
 
-int8_t data_strore_history_init(void);
+int8_t data_store_history_init(void);
 
 
-void data_strore_history_task(void);
+void data_store_history_task(void);
 
 
 

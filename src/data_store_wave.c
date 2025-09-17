@@ -30,7 +30,7 @@ struct Queue_Wave g_queue_wave = {
 };
 
 
-int8_t data_strore_wave_init(void)
+int8_t data_store_wave_init(void)
 {
     g_wave_record.rc.cr.content_block_start = CONTENT_START_ADDR_WAVE/FLASH_BLOCK_SIZE;
     g_wave_record.rc.cr.content_block_end = (CONTENT_START_ADDR_WAVE + CONTENT_LEN_WAVE)/FLASH_BLOCK_SIZE;
@@ -42,7 +42,7 @@ int8_t data_strore_wave_init(void)
 
 }
 
-void data_strore_wave_task(void)
+void data_store_wave_task(void)
 {
 
 

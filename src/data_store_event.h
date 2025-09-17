@@ -17,10 +17,10 @@ struct Event_Record{
 
 extern struct Event_Record g_event_record;
 
-int8_t data_strore_event_init(void);
+int8_t data_store_event_init(void);
 
 
-void data_strore_event_task(void);
+void data_store_event_task(void);
 
 
 
