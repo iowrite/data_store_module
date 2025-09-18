@@ -55,18 +55,11 @@ int8_t data_store_history_init(void)
     g_history_record.rc.cr.dir_bit_block_start = DIRECTORY_START_ADDR_HISTORY/FLASH_BLOCK_SIZE;
     g_history_record.rc.cr.dir_bit_block_len = DIRECTORY_LEN_BIT_HIS/FLASH_BLOCK_SIZE;
     g_history_record.rc.msg_size = HISTORY_MSG_SIZE;
-    // need read directory from flash
     g_history_record.rc.dir_erase = false;
     g_history_record.rc.record_id = 0;
-    g_history_record.rc.cycle = 0;
-
-    g_history_record.rc.wp.block_index = g_history_record.rc.cr.content_block_start;
-    g_history_record.rc.wp.page_index = 0;
-    g_history_record.rc.wp.offset = 0;
-    g_history_record.rc.rp.block_index = g_history_record.rc.cr.content_block_start;
-    g_history_record.rc.rp.page_index = 0;
-    g_history_record.rc.rp.offset = 0;
-
+    // need read directory from flash
+    data_store_init_directory_from_flash(&g_history_record.rc);
+    
     return 0;
 }
 

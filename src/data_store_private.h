@@ -45,7 +45,7 @@ struct Data_Store_Message{
 
 int8_t data_store_refresh_directory(struct Record_Context *rc);
 int8_t data_store_write_message(struct Record_Context *rc, struct Data_Store_Message *msg);
-
+int8_t data_store_init_directory_from_flash(struct Record_Context *rc);
 
 
 

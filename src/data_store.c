@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
 #include "data_store_config.h"
@@ -8,6 +9,7 @@
 #include "data_store_private.h"
 #include "data_store_port.h"
 #include "data_store.h"
+#include "data_store_debug.h"
 
 
 
@@ -106,6 +108,88 @@ int8_t data_store_write_message(struct Record_Context *rc, struct Data_Store_Mes
 
     return 0;
 }
+
+
+
+int8_t data_store_init_directory_from_flash(struct Record_Context *rc)
+{
+
+    struct Record_Context flash_rc;
+    memset(&flash_rc, 0, sizeof(flash_rc));
+    data_store_port_read_flash(rc->cr.dir_flag_block_start, 0, 0, (uint8_t *)&flash_rc, sizeof(flash_rc));
+
+    bool overwrite = false;
+    if(flash_rc.cycle>0)
+    {
+        overwrite = true;
+    }
+    rc->cycle = flash_rc.cycle;
+    uint32_t bit_region_pages = rc->cr.dir_bit_block_len * PAGES_PER_BLOCK;
+    uint8_t read_page_buf[FLASH_PAGE_SIZE];
+    uint32_t zerobits = 0, i = 0, j = 0;
+    for(; i < bit_region_pages; i++)
+    {
+        memset(read_page_buf, 0xff, sizeof(read_page_buf));
+        data_store_port_read_flash(rc->cr.dir_bit_block_start, 0, 0, read_page_buf, sizeof(read_page_buf));
+        for(; j < FLASH_PAGE_SIZE; j++)
+        {
+            if(read_page_buf[j] != 0){
+                goto PARSE_END;
+            }
+        }
+    }
+
+PARSE_END:
+    zerobits = (i*FLASH_PAGE_SIZE + j)*8;
+    for(uint32_t k = 0; k < sizeof(uint8_t); k++)
+    {
+        if((read_page_buf[k] & (1<<k)) == 0)
+        {
+            zerobits++;
+        }
+    }
+    DEBUG_LOG("bit region parse end, zero bits is %d\n", zerobits);
+    uint32_t msg_per_page = FLASH_PAGE_SIZE/rc->msg_size;
+    uint32_t page_idx = zerobits/msg_per_page;
+    uint32_t block_idx = page_idx/PAGES_PER_BLOCK;
+    rc->wp.block_index = rc->cr.content_block_start + block_idx;
+
+    if (rc->wp.block_index < rc->cr.content_block_start 
+        || rc->wp.block_index > rc->cr.content_block_end)  // error range
+    { 
+        // reset to new flash region
+        rc->wp.block_index = rc->cr.content_block_start;
+        rc->wp.page_index = 0;
+        rc->wp.offset = 0;
+        rc->rp.block_index = rc->cr.content_block_start;
+        rc->rp.page_index = 0;
+        rc->rp.offset = 0;
+        rc->cycle = 0;
+        return -1;
+    }
+    rc->wp.page_index = page_idx%PAGES_PER_BLOCK;
+    rc->wp.offset = zerobits%msg_per_page * rc->msg_size;
+    if(overwrite)
+    {
+        rc->rp.block_index = rc->wp.block_index;
+        if(rc->rp.block_index >= rc->cr.content_block_end)
+        {
+            rc->rp.block_index = rc->cr.content_block_start;
+        }
+    }else{
+        rc->rp.block_index = rc->cr.content_block_start;
+    }
+    rc->rp.page_index = 0;
+    rc->rp.offset = 0;
+
+
+    return 0;
+
+}
+
+
+
+
 
 
 
