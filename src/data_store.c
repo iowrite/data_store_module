@@ -117,6 +117,24 @@ int8_t data_store_init_directory_from_flash(struct Record_Context *rc)
     struct Record_Context flash_rc;
     memset(&flash_rc, 0, sizeof(flash_rc));
     data_store_port_read_flash(rc->cr.dir_flag_block_start, 0, 0, (uint8_t *)&flash_rc, sizeof(flash_rc));
+    
+    struct Record_Context flash_rc_new_flash;
+    memset(&flash_rc_new_flash, 0xff, sizeof(flash_rc_new_flash));
+    if(memcmp(&flash_rc, &flash_rc_new_flash, sizeof(flash_rc)) == 0)
+    {
+        DEBUG_LOG("this is a new history directory region\n");
+        // reset to new flash region
+        rc->wp.block_index = rc->cr.content_block_start;
+        rc->wp.page_index = 0;
+        rc->wp.offset = 0;
+        rc->rp.block_index = rc->cr.content_block_start;
+        rc->rp.page_index = 0;
+        rc->rp.offset = 0;
+        rc->cycle = 0;
+        data_store_port_write_flash(rc->cr.dir_flag_block_start/FLASH_BLOCK_SIZE, 0, 0, (uint8_t *)rc, sizeof(struct Record_Context));
+
+        return 0;
+    }
 
     bool overwrite = false;
     if(flash_rc.cycle>0)
@@ -141,9 +159,9 @@ int8_t data_store_init_directory_from_flash(struct Record_Context *rc)
 
 PARSE_END:
     zerobits = (i*FLASH_PAGE_SIZE + j)*8;
-    for(uint32_t k = 0; k < sizeof(uint8_t); k++)
+    for(uint32_t k = 0; k < 8; k++)
     {
-        if((read_page_buf[k] & (1<<k)) == 0)
+        if((read_page_buf[j] & (1<<k)) == 0)
         {
             zerobits++;
         }

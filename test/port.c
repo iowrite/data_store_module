@@ -30,6 +30,7 @@ int8_t data_store_port_write_flash(uint32_t block_index, uint32_t page_index, ui
     uint32_t addr = block_index * FLASH_BLOCK_SIZE + page_index * FLASH_PAGE_SIZE + offset;
     fseek(g_flash_file, addr, SEEK_SET);
     fwrite(buf, 1, len, g_flash_file);
+    fflush(g_flash_file);
 
     return 0;
 }
@@ -41,6 +42,7 @@ int8_t data_store_port_erase_flash(uint32_t block_index, uint32_t len)
     uint8_t *buff = malloc(len * FLASH_BLOCK_SIZE);
     memset(buff, 0xff, len * FLASH_BLOCK_SIZE);
     fwrite(buff, 1, len * FLASH_BLOCK_SIZE, g_flash_file);
+    fflush(g_flash_file);
     free(buff);
 
     return 0;

@@ -58,8 +58,13 @@ int8_t data_store_history_init(void)
     g_history_record.rc.dir_erase = false;
     g_history_record.rc.record_id = 0;
     // need read directory from flash
-    data_store_init_directory_from_flash(&g_history_record.rc);
-    
+    int8_t ret = data_store_init_directory_from_flash(&g_history_record.rc);
+    if(ret != 0)
+    {
+        DEBUG_LOG("data_store_init_directory_from_flash failed\n");
+        return ret;
+    }
+
     return 0;
 }
 
@@ -74,6 +79,7 @@ void data_store_history_task(void)
     // we need a mux lock here if in rtos environment
     while(data_store_dequeue(&g_queue_history.queue, &msg.header) == msg.header.size)   // get a whole/integral frame of message
     {
+        DEBUG_LOG("====> ----");
         // store to flash
         data_store_write_history(&msg);
         DEBUG_LOG("history write a message to flash\n");
