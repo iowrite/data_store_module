@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include "data_store_config.h"
 #include "data_store_queue.h"
@@ -7,9 +8,13 @@
 #include "data_store_port.h"
 #include "data_store_debug.h"
 
+
+
+
 struct History_Record{
     struct Record_Context rc;
     /* member for history itself */
+    bool exporting;
 
 };
 struct History_Record g_history_record;
@@ -49,6 +54,7 @@ int8_t data_store_write_history(struct Message_History* msg)
 
 int8_t data_store_history_init(void)
 {
+    g_history_record.exporting = false;
     g_history_record.rc.cr.content_block_start = CONTENT_START_ADDR_HISTORY/FLASH_BLOCK_SIZE;
     g_history_record.rc.cr.content_block_end = (CONTENT_START_ADDR_HISTORY + CONTENT_LEN_HISTORY)/FLASH_BLOCK_SIZE;
     g_history_record.rc.cr.dir_flag_block_start = DIRECTORY_START_ADDR_FLAGS_HIS/FLASH_BLOCK_SIZE;
@@ -72,20 +78,20 @@ int8_t data_store_history_init(void)
 
 void data_store_history_task(void)
 {
-    
-    struct Message_History msg;
-    msg.header.buf = msg.buf;
-    msg.header.size = sizeof(msg.buf);
-    // we need a mux lock here if in rtos environment
-    while(data_store_dequeue(&g_queue_history.queue, &msg.header) == msg.header.size)   // get a whole/integral frame of message
-    {
-        DEBUG_LOG("====> ----");
-        // store to flash
-        data_store_write_history(&msg);
-        DEBUG_LOG("history write a message to flash\n");
-
+    if(!g_history_record.exporting){
+        struct Message_History msg;
+        msg.header.buf = msg.buf;
+        msg.header.size = sizeof(msg.buf);
+        // we **may** need a mux lock here if in rtos environment
+        while(data_store_dequeue(&g_queue_history.queue, &msg.header) == msg.header.size)   // get a whole/integral frame of message
+        {
+            DEBUG_LOG("====> ----");
+            // store to flash
+            data_store_write_history(&msg);
+            DEBUG_LOG("history write a message to flash\n");
+        }
+        // ^^^release lock here
     }
-    // release lock
 }
 
 void data_store_post_a_history(uint8_t *msg, uint32_t len)
@@ -106,27 +112,80 @@ void data_store_post_a_history(uint8_t *msg, uint32_t len)
 
 void data_store_record_a_history_blocking(uint8_t *msg, uint32_t len)
 {
+    if(!g_history_record.exporting){
+        struct Message_History m;
+        memset(&m, 0, sizeof(m));
+        if(len > (HISTORY_MSG_SIZE-MESSAGE_HEADER_SIZE)) {
+            len = (HISTORY_MSG_SIZE-MESSAGE_HEADER_SIZE);   // truncate
+        }
+        memcpy(m.buf+MESSAGE_HEADER_SIZE, msg, len);
+        m.header.buf = m.buf;
+        m.header.size = (uint16_t)(len+MESSAGE_HEADER_SIZE);
 
-    struct Message_History m;
-    memset(&m, 0, sizeof(m));
-    if(len > (HISTORY_MSG_SIZE-MESSAGE_HEADER_SIZE)) {
-        len = (HISTORY_MSG_SIZE-MESSAGE_HEADER_SIZE);   // truncate
+
+        // store to flash
+        data_store_write_history(&m);
+
     }
-    memcpy(m.buf+MESSAGE_HEADER_SIZE, msg, len);
-    m.header.buf = m.buf;
-    m.header.size = (uint16_t)(len+MESSAGE_HEADER_SIZE);
+
+}
 
 
-    // store to flash
-    data_store_write_history(&m);
+void data_store_batch_export_history_start(void)
+{
+    g_history_record.exporting = true;
+}
+void data_store_batch_export_history_end(void)
+{
+    g_history_record.exporting = false;
+}
 
 
 
+
+uint32_t data_store_get_history_num(void)
+{
+
+    uint32_t msgs = data_store_count_messages(&g_history_record.rc);
+    if(msgs > MAX_HISTROY_RECORD_NUM)
+    {
+        msgs = MAX_HISTROY_RECORD_NUM;
+    }
+    
+    return msgs;
 
 }
 
 
 
+/**
+ * @brief get a record history
+ * @note this function write a fix len to buf (HISTORY_MSG_SIZE)
+ */
+int8_t data_store_get_record_history(uint32_t idx, uint8_t *buf)
+{
+    uint32_t msgs = data_store_count_messages(&g_history_record.rc);
+    if(msgs > MAX_HISTROY_RECORD_NUM)
+    {
+        msgs = MAX_HISTROY_RECORD_NUM;
+    }
+
+    idx -= 1;  // convert to 0 based index
+    if(idx > msgs)
+    {
+        return -1;
+    }
+    idx= msgs - idx;   // convert to from the last record
+
+    struct Operate_Position op;
+    data_store_move(&g_history_record.rc, (int32_t)-idx, &op);
+    struct Data_Store_Message msg = {buf, g_history_record.rc.msg_size};
+    data_store_read_message(&g_history_record.rc, &op, &msg);
+
+
+    return 0;
+
+}
 
 
 

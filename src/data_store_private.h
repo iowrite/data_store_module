@@ -44,10 +44,14 @@ struct Data_Store_Message{
 };
 
 int8_t data_store_refresh_directory(struct Record_Context *rc);
-int8_t data_store_write_message(struct Record_Context *rc, struct Data_Store_Message *msg);
+
 int8_t data_store_init_directory_from_flash(struct Record_Context *rc);
 
+int8_t data_store_move(struct Record_Context *rc, int32_t move_entries, struct Operate_Position *out);
 
+uint32_t data_store_count_messages(struct Record_Context *rc);
+int8_t data_store_read_message(struct Record_Context *rc, struct Operate_Position *op, struct Data_Store_Message *msg);
+int8_t data_store_write_message(struct Record_Context *rc, struct Data_Store_Message *msg);
 
 
 #endif // __DATA_STORE_PRIVATE_H__

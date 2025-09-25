@@ -6,6 +6,8 @@
 #include "data_store.h"
 
 
+#define HISTORY_MSG_GEN_INTERVAL_MS   100
+
 #define TEST_FILE_NAME "/home/hm/Desktop/data_store_module/test/flash.img"
 FILE *g_flash_file;
 pthread_mutex_t g_mux_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -35,7 +37,7 @@ void *generate_history_thread_func(void *arg) {
         printf("====> +++++\n");
         data_store_post_a_history(msg, sizeof msg);
         printf("[thread 1]-->generate a history: %s\n", msg);
-        sleep(1);
+        usleep(HISTORY_MSG_GEN_INTERVAL_MS*1000);
         i++;
         
         
@@ -46,7 +48,9 @@ void *generate_history_thread_func(void *arg) {
 
 int main(int argc, char **argv)
 {
+    printf("===============================================================\n");
     printf("hi this is data store test program\n");
+    printf("===============================================================\n");
     g_flash_file = fopen(TEST_FILE_NAME, "rb+");
 
 

@@ -60,50 +60,205 @@ int8_t data_store_refresh_directory(struct Record_Context *rc)
 
 
 
-int8_t data_store_write_message(struct Record_Context *rc, struct Data_Store_Message *msg)
-{
-    // rewrite message(fill the record id feild)        len = MESSAGE_HEADER_SIZE
-    memcpy(msg->buf, &rc->record_id, sizeof(rc->record_id));
-    int8_t ret = data_store_port_write_flash(rc->wp.block_index, rc->wp.page_index, 0, msg->buf, msg->size);
-    if(ret != 0) {
-        return ret;    // write error
-    }
 
-    // update write position
-    rc->wp.offset += rc->msg_size;
-    if(rc->wp.offset >= FLASH_PAGE_SIZE) {
-        rc->wp.page_index += 1;
-        rc->wp.offset = 0;
-        if(rc->wp.page_index >= PAGES_PER_BLOCK) {
-            rc->wp.block_index += 1;
-            rc->wp.page_index = 0;
-            if(rc->wp.block_index >= rc->cr.content_block_end) {
-                rc->wp.block_index = rc->cr.content_block_start;
-                // update read position if needed 
-                if(    rc->wp.block_index != rc->cr.content_block_start 
-                    && rc->rp.block_index != rc->cr.content_block_start
-                    && rc->wp.block_index == rc->rp.block_index
-                    && rc->cycle > 0)                                   
-                {
-                    rc->rp.block_index += 1;
-                    if(rc->rp.block_index >= rc->cr.content_block_end)
-                    {
-                        rc->rp.block_index = rc->cr.content_block_start;
-                    }
-                    rc->rp.page_index = 0;
-                    rc->rp.offset = 0;
+/**
+ * @brief  flash option cycle
+ * @param  start_block_index: the start block index of the region
+ * @param  end_block_index: the end block index of the region
+ * @param  buf: if buf is NOT NULL, and read/write buf to/from the block, erase the block between in and out position(if needed)
+ * @param  bytes: positive value means forward operation, negative value means backward operation
+ * @param  operation_type: 1-write, 2-read, 
+ * @note these is a little error catching in this function, need to be improved in many ports
+ *
+ */
+static int8_t flash_operation_cycle(uint32_t start_block_index, 
+                               uint32_t end_block_index, 
+                               uint8_t *buf,                             
+                               int32_t bytes, 
+                               uint8_t operation_type,
+                               struct Operate_Position *in, 
+                               struct Operate_Position *out)
+{
+    uint32_t abs_bytes = bytes > 0 ? (uint32_t)bytes : (uint32_t)(-bytes);
+    if(abs_bytes > (end_block_index - start_block_index -2)*FLASH_BLOCK_SIZE) {
+        return -1;
+    }
+    memcpy(out, in, sizeof(struct Operate_Position));
+    uint32_t pages = abs_bytes % FLASH_BLOCK_SIZE / FLASH_PAGE_SIZE;
+    uint32_t offset = abs_bytes % FLASH_PAGE_SIZE;  
+    uint32_t blocks = abs_bytes / FLASH_BLOCK_SIZE;
+
+    if(bytes > 0){                  // forward
+        out->offset += offset;
+        if(out->offset >= FLASH_PAGE_SIZE) {
+            pages++;
+            out->offset = out->offset - FLASH_PAGE_SIZE;
+        }
+        out->page_index += pages;
+        if(out->page_index >= PAGES_PER_BLOCK) {
+            blocks++;
+            out->page_index = out->page_index - PAGES_PER_BLOCK;
+        }
+        out->block_index += blocks;
+
+        if(out->block_index >= end_block_index) {
+            out->block_index = out->block_index - end_block_index + start_block_index;
+            if(buf){            // Oops! We need to judge if an error occurs here (in many ports erase/write operation).
+                    uint32_t write_count = 0;
+                    write_count += FLASH_PAGE_SIZE - in->offset;
+                    write_count += (PAGES_PER_BLOCK - in->page_index - 1)*FLASH_PAGE_SIZE;
+                    write_count += (end_block_index - in->block_index -1)*FLASH_BLOCK_SIZE;
+                if(operation_type == 1){            // write
+                    data_store_port_erase_flash(in->block_index, end_block_index-in->block_index);      // erase to region end
+                    data_store_port_write_flash(in->block_index, in->page_index, in->offset, buf, write_count);
+                    data_store_port_erase_flash(start_block_index, out->block_index-start_block_index);
+                    data_store_port_write_flash(start_block_index, 0, in->offset, buf+write_count, (uint32_t)bytes-write_count);
+                }else if(operation_type == 2){      // read
+                    data_store_port_read_flash(in->block_index, in->page_index, in->offset, buf, write_count);
+                    data_store_port_read_flash(start_block_index, 0, in->offset, buf+write_count, (uint32_t)bytes-write_count);
                 }
-                
-                rc->cycle += 1;
-                rc->dir_erase = true;
             }
-            // erase next block
-            data_store_port_erase_flash(rc->wp.block_index, 1);
+        }else{
+            if(buf){
+                if(operation_type == 1){        // write
+                    data_store_port_write_flash(in->block_index, in->page_index, in->offset, buf,  (uint32_t)bytes);
+                    if(out->block_index != in->block_index)
+                    {
+                        data_store_port_erase_flash(in->block_index+1, out->block_index - in->block_index);     // in->block_index is already ready to write(erased before)
+                    }
+                }else if(operation_type == 2){  // read
+                    data_store_port_read_flash(in->block_index, in->page_index, in->offset, buf,  (uint32_t)bytes);
+                }
+            }
+        }
+    }else{
+        if(out->offset < offset) {
+            out->offset = FLASH_PAGE_SIZE - (offset - out->offset);
+            pages++;
+            if(pages == PAGES_PER_BLOCK)
+            {
+                blocks++;
+                pages = 0;
+            }
+        }else{
+            out->offset -= offset;
+        }
+
+        if(out->page_index < pages)
+        {
+            out->page_index = PAGES_PER_BLOCK - (pages - out->page_index);
+            blocks++;
+        }else{
+            out->page_index -= pages;
+
+        }
+        
+        if(out->block_index < blocks + start_block_index)
+        {
+            out->block_index = end_block_index - (blocks + start_block_index - out->block_index);
+        }else{
+            out->block_index -= blocks;
         }
     }
 
+    return 0;
+}
 
 
+
+/**
+ * @note the implementation of this function is ugly, need to be optimized
+ */
+int8_t data_store_move(struct Record_Context *rc, int32_t move_entries, struct Operate_Position *out)
+{
+    int8_t ret = 0;
+    int32_t bytes = move_entries * rc->msg_size;
+
+    if(rc->cycle == 0 && bytes < 0)
+    {
+        // backward move lenth limited in the first cycle
+        if((rc->wp.block_index - rc->cr.content_block_start)*FLASH_BLOCK_SIZE + rc->wp.page_index*FLASH_PAGE_SIZE + rc->wp.offset < (uint32_t)(-bytes))
+        {
+            return -1;
+        }
+    }
+
+    ret = flash_operation_cycle(rc->cr.content_block_start, rc->cr.content_block_end, NULL, (int32_t)bytes, 1, &rc->wp, out);
+    return ret;
+}
+
+
+uint32_t data_store_count_messages(struct Record_Context *rc)
+{
+    uint32_t msgs = 0;
+    uint32_t bytes = 0;
+    if(rc->cycle == 0)
+    {
+        bytes = (rc->wp.block_index - rc->cr.content_block_start)*FLASH_BLOCK_SIZE + rc->wp.page_index*FLASH_PAGE_SIZE + rc->wp.offset;
+    }else{
+        bytes = (rc->cr.content_block_end - rc->cr.content_block_start -2)*FLASH_BLOCK_SIZE;
+    }
+    msgs = bytes/rc->msg_size;
+    return msgs;
+}
+
+
+
+
+
+int8_t data_store_read_message(struct Record_Context *rc, struct Operate_Position *op, struct Data_Store_Message *msg)
+{
+
+    int8_t ret = 0;
+    struct Operate_Position out;
+    ret = flash_operation_cycle(rc->cr.content_block_start, rc->cr.content_block_end, msg->buf, (int32_t)msg->size, 2, op, &out);
+    if(ret != 0) {
+        return ret;    // move error
+    }
+
+
+    return 0;
+
+
+
+
+}
+
+
+
+int8_t data_store_write_message(struct Record_Context *rc, struct Data_Store_Message *msg)
+{
+
+    int8_t ret = 0;
+    // rewrite message(fill the record id feild)        len = MESSAGE_HEADER_SIZE
+    memcpy(msg->buf, &rc->record_id, sizeof(rc->record_id));
+    struct Operate_Position out;
+    ret = flash_operation_cycle(rc->cr.content_block_start, rc->cr.content_block_end, msg->buf, (int32_t)msg->size, 1, &rc->wp, &out);
+    if(ret != 0) {
+        return ret;    // move error
+    }
+    // update write position
+    if(out.block_index < rc->wp.block_index)          // cycle write happend
+    {
+        rc->cycle += 1;
+        rc->dir_erase = true;                           // action in data_store_refresh_directory function( call afeter this function)
+    }
+
+    memcpy(&rc->wp, &out, sizeof(struct Operate_Position));
+
+    // update read position if needed 
+    if(rc->cycle > 0)                                   
+    {
+        rc->rp.block_index = rc->wp.block_index + 1;
+        if(rc->rp.block_index >= rc->cr.content_block_end)
+        {
+            rc->rp.block_index = rc->cr.content_block_start;
+        }
+        rc->rp.page_index = 0;
+        rc->rp.offset = 0;
+    }
+
+    
     rc->record_id += 1;
 
     return 0;
