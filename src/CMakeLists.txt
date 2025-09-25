@@ -22,4 +22,8 @@ target_compile_options(data_store_lib PRIVATE
 	-ffunction-sections
 	-fdata-sections
 	-O0
+	# -g
+	# -fprofile-instr-generate 
+	# -fcoverage-mapping
 )
+
