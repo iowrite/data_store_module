@@ -71,10 +71,12 @@
 #define  MAX_WAVE_RECORD_NUM       100
 
 // message size
-#define MESSAGE_HEADER_SIZE        (uint32_t)4
-#define HISTORY_MSG_SIZE           (uint32_t)256          // byte, must be multiple of FLASH_PAGE_SIZE
-#define EVENT_MSG_SIZE             (uint32_t)256          // byte, must be multiple of FLASH_PAGE_SIZE
-#define WAVE_MSG_SIZE              (uint32_t)2048*10      // byte, must be multiple of FLASH_PAGE_SIZE
+// so, the user message size limit is: ** HISTORY_MSG_SIZE - MESSAGE_HEADER_SIZE ** 
+#define MESSAGE_HEADER_SIZE        8              // internal use, byte
+#define HISTORY_MSG_SIZE           256          // byte, must be multiple of FLASH_PAGE_SIZE
+#define EVENT_MSG_SIZE             256          // byte, must be multiple of FLASH_PAGE_SIZE
+#define WAVE_MSG_SIZE              (32*64)      // byte, must be multiple of FLASH_PAGE_SIZE
+
 
 
 
@@ -90,9 +92,9 @@
 /******************************************************************************
  * Configuration for queue
  ******************************************************************************/
-#define DS_CFG_Q_HISTORY_SIZE       (2048*4)        // byte, must be power of 2
-#define DS_CFG_Q_EVENT_SIZE         (2048*8)        // byte
-#define DS_CFG_Q_WAVE_SIZE          (2048*8*4)      // byte
+#define DS_CFG_Q_HISTORY_SIZE       (HISTORY_MSG_SIZE*2)        // byte, must be power of 2
+#define DS_CFG_Q_EVENT_SIZE         (EVENT_MSG_SIZE*2)        // byte
+#define DS_CFG_Q_WAVE_SIZE          (2048*2)      // byte
 
 
 

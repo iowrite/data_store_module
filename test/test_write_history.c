@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <time.h>
 #include "data_store.h"
+#include "data_store_config.h"
 
 
 #define HISTORY_MSG_GEN_INTERVAL_MS   100
@@ -27,10 +28,10 @@ void *generate_history_thread_func(void *arg) {
     while (1) {
         time_t now = time(NULL); // 获取当前时间戳
         struct tm *local = localtime(&now); // 转换为本地时间结构
-        uint8_t msg[252];
+        uint8_t msg[HISTORY_MSG_SIZE-MESSAGE_HEADER_SIZE];
         memset(msg, ' ', sizeof msg);
-        msg[250] = '\n';
-        msg[251] = '\0';
+        msg[HISTORY_MSG_SIZE-MESSAGE_HEADER_SIZE-1] = '\n';
+        msg[HISTORY_MSG_SIZE-MESSAGE_HEADER_SIZE-1] = '\0';
         sprintf((char *)msg, "time: %04d-%02d-%02d %02d:%02d:%02d, i: %d",
                 local->tm_year + 1900, local->tm_mon + 1, local->tm_mday,
                 local->tm_hour, local->tm_min, local->tm_sec, i);

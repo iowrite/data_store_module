@@ -53,6 +53,16 @@ __attribute__((weak)) uint32_t data_store_port_get_tick(void)
 
 }
 
+
+__attribute__((weak)) int8_t data_store_port_get_date(uint16_t *year, uint8_t *month, uint8_t *day)
+{
+    UNUSED(year);
+    UNUSED(month);
+    UNUSED(day);
+    return 0;
+}
+
+
 __attribute__((weak)) void data_store_port_mux_lock(void)
 {
 

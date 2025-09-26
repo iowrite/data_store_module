@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+ #include <time.h>
 #include "data_store_port.h"
 #include "data_store_private.h"
 #include "data_store_config.h"
@@ -61,15 +62,37 @@ int8_t data_store_port_erase_flash(uint32_t block_index, uint32_t len)
 
 
 
-uint32_t data_store_port_get_tick(void)
+uint32_t data_store_port_get_tick(void)         // seconds
 {
 
-
-
-
-    return 0;
+    return (uint32_t)time(NULL);
 
 }
+
+int8_t data_store_port_get_date(uint16_t *year, uint8_t *month, uint8_t *day)
+{
+    time_t t = time(NULL);
+    struct tm *tm_info = localtime(&t);
+    if(tm_info == NULL)
+    {
+        return -1;
+    }
+    if(year)
+    {
+        *year = (uint16_t)(tm_info->tm_year + 1900);
+    }
+    if(month)
+    {
+        *month = (uint8_t)(tm_info->tm_mon + 1);
+    }
+    if(day)
+    {
+        *day = (uint8_t)(tm_info->tm_mday);
+    }
+
+    return 0;
+}
+
 
 void data_store_port_mux_lock(void)
 {

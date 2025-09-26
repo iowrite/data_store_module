@@ -13,6 +13,77 @@
 
 
 
+
+
+
+
+void data_store_write_summary_entry(struct Record_Summary *summary, struct Operate_Position *pos)
+{
+    data_store_port_get_date(&summary->date_ary[summary->tail].year, &summary->date_ary[summary->tail].month, &summary->date_ary[summary->tail].day);
+    summary->ary[summary->tail].block_index = pos->block_index;
+    summary->ary[summary->tail].page_index = pos->page_index;
+    summary->ary[summary->tail].offset = pos->offset;
+    summary->tail += 1;
+    if(summary->tail >= summary->len)
+    {
+        summary->tail = 0;
+    }
+    if(summary->tail == summary->head)   // full
+    {
+        summary->head += 1;
+        if(summary->head >= summary->len)
+        {
+            summary->head = 0;
+        }
+    }
+}
+
+void data_store_convert_summary_toidx(struct Record_Summary *summary, struct Record_Context *rc, uint32_t *idx_ary)
+{
+    for (int i = 0; i < summary->len; i++)
+    {
+        if(summary->ary[i].block_index == 0 
+           && summary->ary[i].page_index == 0 
+           && summary->ary[i].offset == 0)
+        {
+            idx_ary[i] = 0;    // empty entry
+            continue;          
+        }
+        uint32_t bytes = 0;
+        if(rc->cycle == 0)
+        {
+            uint32_t blocks = (summary->ary[i].block_index - rc->cr.content_block_start);
+            bytes = blocks*FLASH_BLOCK_SIZE + summary->ary[i].page_index*FLASH_PAGE_SIZE + summary->ary[i].offset;
+        }else {
+            uint32_t len_entry = (summary->ary[i].block_index - rc->cr.content_block_start)*FLASH_BLOCK_SIZE + summary->ary[i].page_index*FLASH_PAGE_SIZE + summary->ary[i].offset;
+            uint32_t len_w = (rc->wp.block_index*FLASH_BLOCK_SIZE - rc->cr.content_block_start) + rc->wp.page_index*FLASH_PAGE_SIZE + rc->wp.offset;
+            uint32_t len_r = (rc->rp.block_index*FLASH_BLOCK_SIZE - rc->cr.content_block_start) + rc->rp.page_index*FLASH_PAGE_SIZE + rc->rp.offset;
+            uint32_t len_total = (rc->cr.content_block_end - rc->cr.content_block_start -2)*FLASH_BLOCK_SIZE;
+            if(len_entry > len_w && len_entry < len_r)
+            {
+                idx_ary[i] = 0;    // invlid entry
+                continue;           
+            }
+
+            if(len_entry <= len_w)
+            {
+                bytes = len_w-len_r;
+            }else{
+                bytes = len_w + len_total - len_entry;
+            }
+        }
+        idx_ary[i] = bytes/rc->msg_size+1;  // convert to 1 based index 
+        
+    }
+}
+
+
+
+
+
+
+
+
 int8_t data_store_refresh_directory(struct Record_Context *rc)
 {
     if(rc->dir_erase)
@@ -231,7 +302,7 @@ int8_t data_store_write_message(struct Record_Context *rc, struct Data_Store_Mes
 
     int8_t ret = 0;
     // rewrite message(fill the record id feild)        len = MESSAGE_HEADER_SIZE
-    memcpy(msg->buf, &rc->record_id, sizeof(rc->record_id));
+    memcpy(msg->buf, &rc->record_id, MESSAGE_HEADER_SIZE);
     struct Operate_Position out;
     ret = flash_operation_cycle(rc->cr.content_block_start, rc->cr.content_block_end, msg->buf, (int32_t)msg->size, 1, &rc->wp, &out);
     if(ret != 0) {

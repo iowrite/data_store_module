@@ -76,6 +76,22 @@ int8_t data_store_history_init(void)
 
 
 
+
+
+
+
+static struct Operate_Position history_summary_ary[MAX_STORE_SPAN];
+static struct Record_Date history_summary_date_ary[MAX_STORE_SPAN];
+struct Record_Summary s_record_summary_history = {
+    .ary = history_summary_ary,
+    .date_ary = history_summary_date_ary,
+    .len = MAX_STORE_SPAN,
+    .head = 0,
+    .tail = 0
+};
+
+
+
 void data_store_history_task(void)
 {
     if(!g_history_record.exporting){
@@ -85,6 +101,16 @@ void data_store_history_task(void)
         // we **may** need a mux lock here if in rtos environment
         while(data_store_dequeue(&g_queue_history.queue, &msg.header) == msg.header.size)   // get a whole/integral frame of message
         {
+
+            uint8_t today = 0;
+            data_store_port_get_date(NULL, NULL, &today);
+            static uint8_t last = 0;
+            if(today - last > 1)   // once a day
+            {
+                last = today;
+                data_store_write_summary_entry(&s_record_summary_history, &g_history_record.rc.wp);
+            }
+
             DEBUG_LOG("====> ----");
             // store to flash
             data_store_write_history(&msg);
@@ -151,7 +177,7 @@ uint32_t data_store_get_history_num(void)
     {
         msgs = MAX_HISTROY_RECORD_NUM;
     }
-    
+
     return msgs;
 
 }
