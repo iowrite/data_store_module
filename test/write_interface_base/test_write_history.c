@@ -9,7 +9,7 @@
 
 #define HISTORY_MSG_GEN_INTERVAL_MS   100
 
-#define TEST_FILE_NAME "/home/hm/Desktop/data_store_module/test/flash.img"
+#define TEST_FILE_NAME "/home/hm/Desktop/data_store_module/test/write_interface_base/flash.img"
 FILE *g_flash_file;
 pthread_mutex_t g_mux_lock = PTHREAD_MUTEX_INITIALIZER;
 void *data_store_thread_func(void *arg) {

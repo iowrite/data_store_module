@@ -8,7 +8,7 @@
 #include "data_store.h"
 
 
-#define TEST_FILE_NAME "/home/hm/Desktop/data_store_module/test/flash.img"
+#define TEST_FILE_NAME "/home/hm/Desktop/data_store_module/test/read_interface_base/flash.img"
 FILE *g_flash_file;
 pthread_mutex_t g_mux_lock = PTHREAD_MUTEX_INITIALIZER;
 
