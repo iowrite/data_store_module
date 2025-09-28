@@ -443,6 +443,7 @@ PARSE_END:
 void data_store_init(void)
 {
 
+    DEBUG_LOG("data store using %s\n", DATA_STORE_USER_CONFIG_FILE);
     data_store_history_init();
 
     data_store_event_init();

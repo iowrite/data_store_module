@@ -10,10 +10,20 @@ file(GLOB_RECURSE DATA_STORE_HEADERS
 list(FILTER DATA_STORE_SOURCES EXCLUDE REGEX "/old/")
 list(FILTER DATA_STORE_HEADERS EXCLUDE REGEX "/old/")
 
-add_library(data_store_lib STATIC ${DATA_STORE_SOURCES} ${DATA_STORE_HEADERS})
-target_include_directories(data_store_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_compile_options(data_store_lib PRIVATE
+set(DATA_STORE_SOURCES ${DATA_STORE_SOURCES} CACHE INTERNAL "Data store source files")
+set(DATA_STORE_HEADERS ${DATA_STORE_HEADERS} CACHE INTERNAL "Data store header files")
+
+# add_library(data_store_lib STATIC ${DATA_STORE_SOURCES} ${DATA_STORE_HEADERS})
+
+
+
+
+
+# 创建接口库来管理编译定义
+add_library(data_store_interface INTERFACE)
+
+target_compile_options(data_store_interface INTERFACE
 	-std=c99
 	-Wall
 	-Wextra
@@ -26,3 +36,6 @@ target_compile_options(data_store_lib PRIVATE
 	# -fprofile-instr-generate 
 	# -fcoverage-mapping
 )
+target_include_directories(data_store_interface INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+
