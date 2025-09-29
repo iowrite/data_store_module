@@ -7,6 +7,8 @@
 #ifndef DATA_STORE_CONFIG_H
 #define DATA_STORE_CONFIG_H
 
+// script process start 
+
 /******************************************************************************
  * Configuration for store module
  ******************************************************************************/
@@ -178,5 +180,8 @@
 #ifndef DS_CFG_Q_WAVE_SIZE
     #define DS_CFG_Q_WAVE_SIZE          (2048*2)      // byte
 #endif
+
+
+// script process end
 
 #endif
