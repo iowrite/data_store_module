@@ -66,12 +66,6 @@ struct Data_Store_Message{
 int8_t data_store_read_message(struct Record_Context *rc, struct Operate_Position *op, struct Data_Store_Message *msg);
 int8_t data_store_write_message(struct Record_Context *rc, struct Data_Store_Message *msg);
 
-struct Record_Date
-{
-    uint16_t year;
-    uint8_t month;
-    uint8_t day;
-};
 
 
 
@@ -86,5 +80,8 @@ struct Record_Summary{
 };
 void data_store_write_summary_entry(struct Record_Summary *summary, struct Operate_Position *pos);
 
+
+
+void data_store_convert_summary_toidx(struct Record_Summary *summary, struct Record_Context *rc, uint32_t *idx_ary);
 
 #endif // __DATA_STORE_PRIVATE_H__

@@ -5,12 +5,14 @@
     "version": "0.2.0",
     "configurations": [
 
+
     {
         "type": "lldb",
         "request": "launch",
         "name": "Launch",
-        // "program": "${workspaceFolder}/out/build/data_store_linux_simulation/test/data_store_test_read_history",
-        "program": "${workspaceFolder}/out/build/data_store_linux_simulation/test/data_store_test_write_history",
+        // "program": "${workspaceFolder}/out/build/data_store_linux_simulation/test/read_interface_base/data_store_test_read_interface_base",
+        // "program": "${workspaceFolder}/out/build/data_store_linux_simulation/test/write_interface_base/data_store_test_write_interface_base",
+        "program": "${workspaceFolder}/out/build/data_store_linux_simulation/test/write_interface_summary_2/data_store_test_write_interface_summary_2",
         "args": [],
         "cwd": "${workspaceFolder}"
     }

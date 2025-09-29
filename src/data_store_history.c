@@ -7,6 +7,7 @@
 #include "data_store_private.h"
 #include "data_store_port.h"
 #include "data_store_debug.h"
+#include "data_store.h"
 
 
 
@@ -101,13 +102,16 @@ void data_store_history_task(void)
         // we **may** need a mux lock here if in rtos environment
         while(data_store_dequeue(&g_queue_history.queue, &msg.header) == msg.header.size)   // get a whole/integral frame of message
         {
-
-            uint8_t today = 0;
-            data_store_port_get_date(NULL, NULL, &today);
-            static uint8_t last = 0;
-            if(today - last > 1)   // once a day
+            uint16_t now_year = 0;
+            uint8_t now_month = 0;
+            uint8_t now_day = 0;
+            data_store_port_get_date(&now_year, &now_month, &now_day);
+            uint32_t now_days = now_year*365 + now_month*30 + now_day;
+            static uint32_t last_days = 0;
+            if(now_days - last_days >= 1)   // once a day
             {
-                last = today;
+                last_days = now_days;
+                DEBUG_LOG("history summary update");
                 data_store_write_summary_entry(&s_record_summary_history, &g_history_record.rc.wp);
             }
 
@@ -181,6 +185,33 @@ uint32_t data_store_get_history_num(void)
     return msgs;
 
 }
+
+
+void data_store_get_history_summary(uint32_t *id_ary, struct Record_Date *date_ary)
+{
+    uint32_t raw_id_ary[MAX_STORE_SPAN];
+    data_store_convert_summary_toidx(&s_record_summary_history, &g_history_record.rc, raw_id_ary);
+    if(s_record_summary_history.head < s_record_summary_history.tail)
+    {
+        memcpy(id_ary, raw_id_ary, (uint32_t)s_record_summary_history.tail*sizeof(uint32_t));
+        memcpy(date_ary, s_record_summary_history.date_ary, (uint32_t)s_record_summary_history.tail*sizeof(struct Record_Date));
+    }else{
+        uint32_t offset = (uint32_t)s_record_summary_history.head*sizeof(uint32_t); 
+        uint32_t count = (uint32_t)s_record_summary_history.len*sizeof(uint32_t) - offset;
+        memcpy(id_ary, raw_id_ary+offset, count);
+        memcpy(id_ary+count, raw_id_ary, offset);
+        uint32_t offset_date = (uint32_t)s_record_summary_history.head*sizeof(struct Record_Date); 
+        uint32_t count_date = (uint32_t)s_record_summary_history.len*sizeof(struct Record_Date) - offset_date;
+        memcpy(date_ary, s_record_summary_history.date_ary+offset_date, count_date);
+        memcpy(date_ary+count_date, s_record_summary_history.date_ary, offset_date);
+    }
+
+
+    return;
+
+}
+
+
 
 
 

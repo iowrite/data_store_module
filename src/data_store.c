@@ -30,6 +30,7 @@ void data_store_write_summary_entry(struct Record_Summary *summary, struct Opera
     }
     if(summary->tail == summary->head)   // full
     {
+        DEBUG_LOG("xxx summary full");
         summary->head += 1;
         if(summary->head >= summary->len)
         {
