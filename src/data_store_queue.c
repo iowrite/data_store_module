@@ -4,11 +4,13 @@
 #include "data_store_debug.h"
 #include "data_store_port.h"
 
-#define QUEUE_SIZE_MASK(q) ((q)->size - 1)
+
 bool data_store_queue_is_full(struct Data_Store_Queue *q)
 {
     bool isfull = false;
-    if(((q->tail - q->head) & QUEUE_SIZE_MASK(q)) == QUEUE_SIZE_MASK(q))
+    // case 1: [head - - - -  ... - - tail ]
+    // case 2: [- - ... - tail head - ... -]
+    if(((q->tail - q->head == q->size-1) || q->head - q->tail == 1))
     {
         isfull = true;
 #if DS_CFG_M_DEBUG_QUEUE
@@ -45,12 +47,20 @@ void data_store_enqueue(struct Data_Store_Queue *q, struct Data_Store_Message *m
         if(data_store_queue_is_full(q)) {
             /* Is going to overwrite the oldest byte */
             /* Increase tail index */
-            q->head = ((q->head + 1) & QUEUE_SIZE_MASK(q));
+            q->head = q->head + 1;
+            if(q->head == q->size)
+            {
+                q->head = 0;
+            }
         }
 
         /* Place data in buffer: always move tail */
         q->buf[q->tail] = msg->buf[i];
-        q->tail = ((q->tail + 1) & QUEUE_SIZE_MASK(q));
+        q->tail = q->tail + 1;
+        if(q->tail == q->size)
+        {
+            q->tail = 0;
+        }
     }
     DATA_STORE_MUTEX_UNLOCK();
 }
@@ -66,7 +76,11 @@ int32_t data_store_dequeue(struct Data_Store_Queue *q, struct Data_Store_Message
     for(int i = 0; i < msg->size; i++)
     {
         msg->buf[i] = q->buf[q->head];
-        q->head = ((q->head + 1) & QUEUE_SIZE_MASK(q));
+        q->head = q->head + 1;
+        if(q->head == q->size)
+        {
+            q->head = 0;
+        }
 
         if(data_store_queue_is_empty(q)) {
             /* No items */

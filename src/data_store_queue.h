@@ -3,7 +3,7 @@
 #include "data_store_config.h"
 #include "data_store_private.h"
 
-#define STATIC_IS_POWER_OF_TWO(n) (((n) & ((n) - 1)) == 0 && (n) > 0)
+
 
 
 #ifndef __DTA_STORE_QUEUE_H__
@@ -21,30 +21,21 @@ struct Data_Store_Queue
 struct Queue_History
 {
     struct Data_Store_Queue queue;
-    uint8_t buf[DS_CFG_Q_HISTORY_SIZE];
-#if !STATIC_IS_POWER_OF_TWO(DS_CFG_Q_HISTORY_SIZE)
-    #error "DS_CFG_Q_HISTORY_SIZE must be power of 2"
-#endif 
+    uint8_t buf[DS_CFG_Q_HISTORY_SIZE+1];       // avoid a incomplete frame(+1byte), rear always empty
 };
 
 
 struct Queue_Event
 {
     struct Data_Store_Queue queue;
-    uint8_t buf[DS_CFG_Q_EVENT_SIZE];
-#if !STATIC_IS_POWER_OF_TWO(DS_CFG_Q_EVENT_SIZE)
-    #error "DS_CFG_Q_EVENT_SIZE must be power of 2"
-#endif
+    uint8_t buf[DS_CFG_Q_EVENT_SIZE+1];         // avoid a incomplete frame(+1byte), rear always empty
 };
 
 
 struct Queue_Wave
 {
     struct Data_Store_Queue queue;
-    uint8_t buf[DS_CFG_Q_WAVE_SIZE];
-#if !STATIC_IS_POWER_OF_TWO(DS_CFG_Q_WAVE_SIZE)
-    #error "DS_CFG_Q_WAVE_SIZE must be power of 2"
-#endif
+    uint8_t buf[DS_CFG_Q_WAVE_SIZE+1];          // avoid a incomplete frame(+1byte), rear always empty
 };
 
 extern struct Queue_History g_queue_history;
