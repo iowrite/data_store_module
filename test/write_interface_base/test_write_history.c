@@ -43,9 +43,9 @@ void *generate_history_thread_func(void *arg) {
         printf("[thread 2]-->generate a history: %s\n", msg);
         usleep(HISTORY_MSG_GEN_INTERVAL_MS*1000);
         i++;
-        // ...existing code...
+        
     }
-
+    // ...existing code...
     g_exit_flag = 1; // 通知 data_store_thread_func 退出
     printf("[thread 2]--> exit\n");
     return NULL;
@@ -111,6 +111,24 @@ int main(int argc, char **argv)
     // Optionally, do other work here or just wait for the thread
     pthread_join(data_store_thread, NULL);
 
+
+    FILE *resultf = fopen("/home/hm/Desktop/data_store_module/out/build/data_store_linux_simulation/test/write_interface_base/flash.img", "rb");
+    fseek(resultf, 0xb000, SEEK_SET);
+    for(int i = 0; i < MAX_HISTROY_RECORD_NUM+1; i++)
+    {
+        uint64_t id;
+        fread(&id, 1, 8, resultf);
+        printf("read id = %lu\n", id);
+        if(id != i)
+        {
+            fclose(resultf);
+            return -1;
+        }
+        fseek(resultf, HISTORY_MSG_SIZE-8, SEEK_CUR);
+
+    }
+
+    fclose(resultf);
 
     return 0;
 }
