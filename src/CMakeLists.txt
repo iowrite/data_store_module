@@ -29,6 +29,7 @@ target_compile_options(data_store_interface INTERFACE
 	-Wextra
 	-Wconversion
 	-Wstrict-prototypes
+	-Wnewline-eof
 	-ffunction-sections
 	-fdata-sections
 	-O0

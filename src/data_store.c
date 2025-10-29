@@ -12,7 +12,9 @@
 #include "data_store_debug.h"
 
 
-
+uint32_t g_reocord_version = (RECORD_MODULE_VERSION_MAJOR <<16) 
+                            | (RECORD_MODULE_VERSION_MINOR <<8) 
+                            | (RECORD_MODULE_VERSION_PATCH);
 
 
 

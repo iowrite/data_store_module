@@ -4,6 +4,11 @@
 #ifndef __DATA_STORE_H__
 #define __DATA_STORE_H__
 
+#define RECORD_MODULE_VERSION_MAJOR    1
+#define RECORD_MODULE_VERSION_MINOR    0
+#define RECORD_MODULE_VERSION_PATCH    0
+
+
 
 struct Record_Date
 {

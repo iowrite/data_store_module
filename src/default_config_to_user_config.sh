@@ -1,26 +1,75 @@
 #!/bin/bash
 
-FILE="data_store_config.h"
+# 输入文件和输出文件
+input_file="data_store_config.h"
+output_file="data_store_user_config.h"
 
-# 创建输出文件
-USER_FILE="data_store_user_config.h"
+# 检查输入文件是否存在
+if [ ! -f "$input_file" ]; then
+    echo "错误: 输入文件 $input_file 不存在"
+    exit 1
+fi
+
+
 echo "#warning \"<this file is generate by default_config_to_user_config.sh>, \
 your are useing default config, \
 please define DATA_STORE_USER_CONFIG_FILE to your own config file,\
-or delete this warning, edit this file accord your project\"" > "$USER_FILE"
+or delete this warning, edit this file accord your project\"" > "$output_file"
 
-echo "#ifndef XXX_USER_CONFIG_FILE" >> "$USER_FILE"
-echo "#define XXX_USER_CONFIG_FILE" >> "$USER_FILE"
-
-
-# 处理文件：只提取//script process start 与 //script process end之间的内容
-sed -n '/\/\/ script process start/,/\/\/ script process end/p' "$FILE" | \
-sed '/\/\/ script process start/d; /\/\/ script process end/d' >> "$USER_FILE"
+echo "#ifndef DATA_STORE_USER_CONFIG_FILE" >> "$output_file"
+echo "#define DATA_STORE_USER_CONFIG_FILE" >> "$output_file"
 
 
 
-echo "#endif" >> "$USER_FILE"
+# 处理文件，只输出脚本区域处理后的内容
+awk '
+# 标志变量，标记是否在脚本处理区域内
+in_script_section == 0 && /\/\/ script process start/ {
+    in_script_section = 1
+    next
+}
+
+in_script_section == 1 && /\/\/ script process end/ {
+    in_script_section = 0
+    exit  # 处理完脚本区域就退出
+}
+
+# 在脚本处理区域内
+in_script_section == 1 {
+    # 如果行包含 #ifndef，开始记录这个条件块
+    if (/^[[:space:]]*#ifndef/) {
+        in_ifndef_block = 1
+        next
+    }
+    
+    # 如果在一个 #ifndef 块中
+    if (in_ifndef_block == 1) {
+        # 如果遇到 #endif，结束这个块
+        if (/^[[:space:]]*#endif/) {
+            in_ifndef_block = 0
+            next
+        }
+        
+        # 如果遇到 #define，输出它
+        if (/^[[:space:]]*#define/) {
+            print
+            next
+        }
+        
+        # 跳过其他行（如空行、注释等）
+        next
+    }
+    
+    # 不在任何 #ifndef 块中的行，直接输出
+    print
+}
+' "$input_file" >> "$output_file"
 
 
-echo "处理完成，结果保存在: $USER_FILE"
+echo "#endif" >> "$output_file"
 
+
+
+
+
+echo "处理完成！只输出脚本区域处理后的内容到: $output_file"

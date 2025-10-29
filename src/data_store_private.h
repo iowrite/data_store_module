@@ -85,3 +85,4 @@ void data_store_write_summary_entry(struct Record_Summary *summary, struct Opera
 void data_store_convert_summary_toidx(struct Record_Summary *summary, struct Record_Context *rc, uint32_t *idx_ary);
 
 #endif // __DATA_STORE_PRIVATE_H__
+
