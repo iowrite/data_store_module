@@ -1,6 +1,6 @@
 #warning "<this file is generate by default_config_to_user_config.sh>, your are useing default config, please define DATA_STORE_USER_CONFIG_FILE to your own config file,or delete this warning, edit this file accord your project"
-#ifndef DATA_STORE_USER_CONFIG_FILE
-#define DATA_STORE_USER_CONFIG_FILE
+#ifndef DATA_STORE_USER_CONFIG_H
+#define DATA_STORE_USER_CONFIG_H
 
 /******************************************************************************
  * Configuration for store module

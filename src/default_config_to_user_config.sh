@@ -16,8 +16,8 @@ your are useing default config, \
 please define DATA_STORE_USER_CONFIG_FILE to your own config file,\
 or delete this warning, edit this file accord your project\"" > "$output_file"
 
-echo "#ifndef DATA_STORE_USER_CONFIG_FILE" >> "$output_file"
-echo "#define DATA_STORE_USER_CONFIG_FILE" >> "$output_file"
+echo "#ifndef DATA_STORE_USER_CONFIG_H" >> "$output_file"
+echo "#define DATA_STORE_USER_CONFIG_H" >> "$output_file"
 
 
 
